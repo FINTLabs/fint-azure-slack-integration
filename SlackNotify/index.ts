@@ -1,8 +1,9 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
 import Slack = require("node-slack");
-import { CommonAlert } from './model/CommonAlert';
+import { CommonAlert, AllOf } from './model/CommonAlert';
 import * as dotenv from "dotenv";
-import { getReport, getResourceNameFromId } from "./lib/helpers";
+import { getReport, getResourceNameFromId, isOverThreshold } from "./lib/helpers";
+
 
 
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
@@ -14,15 +15,19 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         const alert: CommonAlert = req.body
         const resources = alert.data.essentials.alertTargetIDs;
 
-        resources.forEach(resourceId => slack.send({
-            text: "Something 💩 happend to *<"
-                + process.env.AZURE_PORTAL_BASE
-                + resourceId + "|"
-                + getResourceNameFromId(resourceId)
-                + ">*.",
-            attachments: [{ color: '#ffaa44' }, getReport(alert)]
-        }));
-        
+        resources.forEach(resourceId => {
+            if (isOverThreshold(alert.data.alertContext.condition.allOf)) {
+                slack.send({
+                    text: "Something 💩 happend to *<"
+                        + process.env.AZURE_PORTAL_BASE
+                        + resourceId + "|"
+                        + getResourceNameFromId(resourceId)
+                        + ">*.",
+                    attachments: [{ color: '#ffaa44' }, getReport(alert)]
+                });
+            }
+        });
+
         context.res = {
             status: 200
         }

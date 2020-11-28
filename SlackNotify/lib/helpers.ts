@@ -1,4 +1,4 @@
-import { CommonAlert } from "../model/CommonAlert";
+import { AllOf, CommonAlert } from "../model/CommonAlert";
 
 export const getResourceNameFromId = (resource: string): string => {
     const t = resource.split('/');
@@ -35,4 +35,8 @@ export function getReport(alert: CommonAlert) {
         })
         )
     };
+}
+
+export const isOverThreshold = (allOf: AllOf[]) => {
+    return allOf.map(a => a.metricValue > new Number(a.threshold)).some(Boolean);
 }
